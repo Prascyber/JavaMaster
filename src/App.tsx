@@ -14,6 +14,7 @@ import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Privacy } from './pages/Privacy';
 import { Terms } from './pages/Terms';
+import { Refund } from './pages/refundandcancel';
 import { Orders } from './pages/Orders';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -54,6 +55,8 @@ function AppContent() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/refundandcancel" element={<Refund />} />
+
           </Routes>
         </main>
         <Footer />

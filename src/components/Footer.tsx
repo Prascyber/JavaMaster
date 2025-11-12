@@ -40,6 +40,11 @@ export function Footer() {
   </Link>
 </li>
   <li><Link to="/terms" className="hover:text-brand-yellow transition">Terms & Conditions</Link></li>
+  <li>
+  <Link to="/refundandcancel" className="hover:text-brand-yellow transition">
+    Refund & Cancellation
+  </Link>
+</li>
             </ul>
           </div>
           <div>
