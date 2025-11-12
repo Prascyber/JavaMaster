@@ -1,4 +1,5 @@
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { Link } from "react-router-dom";
 
 export function Footer() {
   return (
@@ -21,7 +22,11 @@ export function Footer() {
           <div>
             <h4 className="text-brand-yellow font-semibold mb-4">Policies</h4>
             <ul className="space-y-2 text-gray-400">
-              <li><a href="/privacy" className="hover:text-brand-yellow transition">Privacy Policy</a></li>
+             <li>
+  <Link to="/privacy" className="hover:text-brand-yellow transition">
+    Privacy Policy
+  </Link>
+</li>
               <li><a href="/terms" className="hover:text-brand-yellow transition">Terms & Conditions</a></li>
             </ul>
           </div>
