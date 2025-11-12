@@ -27,7 +27,7 @@ export function Footer() {
     Privacy Policy
   </Link>
 </li>
-              <li><a href="/terms" className="hover:text-brand-yellow transition">Terms & Conditions</a></li>
+  <li><Link to="/terms" className="hover:text-brand-yellow transition">Terms & Conditions</Link></li>
             </ul>
           </div>
           <div>

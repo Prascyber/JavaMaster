@@ -13,6 +13,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Privacy } from './pages/Privacy';
+import { Terms } from './pages/Terms';
 import { Orders } from './pages/Orders';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -52,7 +53,7 @@ function AppContent() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
           </Routes>
         </main>
         <Footer />
