@@ -4,7 +4,7 @@ import { Play, Users, Zap, Award, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export function Home() {
-  const [stats, setStats] = useState({ students: 0, learning: 0, sessions: 0 });
+  const [stats, setStats] = useState({ students: 50, learning: 50, sessions: 170 });
   const [courseCount, setCourseCount] = useState(0);
 
   useEffect(() => {
