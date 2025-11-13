@@ -27,32 +27,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ✅ New Supabase Auth-based Signup
-const signUp = async (data: any): Promise<User> => {
+const signUp = async (data: any) => {
   const { email, password, full_name, college_name, year, mobile_number } = data;
 
-  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+  const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: { full_name, college_name, year, mobile_number },
+    },
   });
 
-  if (signUpError) throw signUpError;
-  const user = signUpData.user;
-  if (!user) throw new Error("User not created");
+  if (signUpError) {
+    console.error("Signup error:", signUpError);
+    throw new Error(signUpError.message);
+  }
 
-  await supabase
-    .from("profiles")
-    .update({
-      full_name,
-      college_name,
-      year,
-      mobile_number,
-    })
-    .eq("id", user.id);
+  if (!authData.user) throw new Error("User not returned from signup");
 
-  setStudent(user);
-  localStorage.setItem("student", JSON.stringify(user));
+  // Wait briefly for trigger to insert profile
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
-  return user; // ✅ Now we return it
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', authData.user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error("Profile fetch error:", profileError);
+    throw new Error(profileError.message);
+  }
+
+  if (profileData) {
+    setStudent(profileData);
+    localStorage.setItem('student', JSON.stringify(profileData));
+  }
+
+  return authData.user;
 };
 
 
