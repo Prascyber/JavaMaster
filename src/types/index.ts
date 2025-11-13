@@ -1,3 +1,6 @@
+import { User } from "@supabase/supabase-js";
+
+
 export interface Student {
   id: string;
   email: string;
@@ -40,7 +43,7 @@ export interface AuthContextType {
   student: Student | null;
   admin: any | null;
   loading: boolean;
-  signUp: (data: any) => Promise<void>;
+  signUp: (data: any) => Promise<User>;  // ✅ make sure this says Promise<void>
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   adminLogin: (email: string, password: string) => Promise<void>;

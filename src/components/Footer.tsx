@@ -72,3 +72,10 @@ export function Footer() {
     </footer>
   );
 }
+
+
+
+
+// rzp_live_Rexty5uEItYIVy = key_id
+
+// KyTFlhkgRIaDCYwlFi46RZ8Z = key_secret

@@ -1,92 +1,96 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Student, AuthContextType } from '../types';
+import type { AuthContextType } from '../types';
+import { User } from '@supabase/supabase-js';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [student, setStudent] = useState<Student | null>(null);
+  const [student, setStudent] = useState<any | null>(null);
   const [admin, setAdmin] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 🔍 Check auth session on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      const studentData = localStorage.getItem('student');
-      const adminData = localStorage.getItem('admin');
-
-      if (studentData) {
-        setStudent(JSON.parse(studentData));
-      }
-      if (adminData) {
-        setAdmin(JSON.parse(adminData));
-      }
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setStudent(user);
       setLoading(false);
     };
+    getUser();
 
-    checkAuth();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setStudent(session?.user ?? null);
+    });
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
-  const signUp = async (data: any) => {
-    const { email, password, full_name, college_name, year, mobile_number } = data;
+  // ✅ New Supabase Auth-based Signup
+const signUp = async (data: any): Promise<User> => {
+  const { email, password, full_name, college_name, year, mobile_number } = data;
 
-    const { data: result, error } = await supabase
-      .from('students')
-      .insert([
-        {
-          email,
-          password_hash: await hashPassword(password),
-          full_name,
-          college_name,
-          year,
-          mobile_number,
-        }
-      ])
-      .select()
-      .maybeSingle();
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    email,
+    password,
+  });
 
-    if (error) throw error;
+  if (signUpError) throw signUpError;
+  const user = signUpData.user;
+  if (!user) throw new Error("User not created");
 
-    if (result) {
-      setStudent(result);
-      localStorage.setItem('student', JSON.stringify(result));
-    }
-  };
+  await supabase
+    .from("profiles")
+    .update({
+      full_name,
+      college_name,
+      year,
+      mobile_number,
+    })
+    .eq("id", user.id);
 
-  const login = async (email: string, password: string) => {
-    const { data: result, error } = await supabase
-      .from('students')
-      .select()
-      .eq('email', email)
-      .maybeSingle();
+  setStudent(user);
+  localStorage.setItem("student", JSON.stringify(user));
 
-    if (error || !result) throw new Error('Invalid credentials');
+  return user; // ✅ Now we return it
+};
 
-    const passwordMatch = await verifyPassword(password, result.password_hash);
-    if (!passwordMatch) throw new Error('Invalid credentials');
 
-    setStudent(result);
-    localStorage.setItem('student', JSON.stringify(result));
-  };
+  // ✅ Login using Supabase Auth
+  const login = async (email: string, password: string): Promise<void> => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
+  if (error) throw error;
+  const user = data.user;
+  if (!user) throw new Error("Invalid credentials");
+
+  setStudent(user);
+  localStorage.setItem("student", JSON.stringify(user));
+};
+
+
+  // ✅ Logout
   const logout = async () => {
+    await supabase.auth.signOut();
     setStudent(null);
-    localStorage.removeItem('student');
   };
 
+  // ✅ Admin login (if you maintain a separate admin_users table)
   const adminLogin = async (email: string, password: string) => {
-    const { data: result, error } = await supabase
+    const { data, error } = await supabase
       .from('admin_users')
       .select()
       .eq('email', email)
       .maybeSingle();
 
-    if (error || !result) throw new Error('Invalid admin credentials');
+    if (error || !data) throw new Error('Invalid admin credentials');
+    if (data.password !== password) throw new Error('Invalid admin credentials');
 
-    const passwordMatch = await verifyPassword(password, result.password_hash);
-    if (!passwordMatch) throw new Error('Invalid admin credentials');
-
-    setAdmin(result);
-    localStorage.setItem('admin', JSON.stringify(result));
+    setAdmin(data);
+    localStorage.setItem('admin', JSON.stringify(data));
   };
 
   const adminLogout = () => {
@@ -95,7 +99,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ student, admin, loading, signUp, login, logout, adminLogin, adminLogout }}>
+    <AuthContext.Provider
+      value={{
+        student,
+        admin,
+        loading,
+        signUp,
+        login,
+        logout,
+        adminLogin,
+        adminLogout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -105,17 +120,4 @@ export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
-}
-
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const hashedPassword = await hashPassword(password);
-  return hashedPassword === hash;
 }

@@ -40,7 +40,7 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center gap-2 font-bold text-2xl">
             <Code2 className="w-8 h-8 text-brand-yellow" />
-            <span className="text-brand-yellow">JavaMaster</span>
+            <span className="text-brand-yellow">TheJavaMaster</span>
           </Link>
 
           <div className="hidden md:flex gap-8">
