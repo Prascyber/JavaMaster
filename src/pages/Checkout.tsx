@@ -52,42 +52,64 @@ export function Checkout() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
 
-    try {
-      if (!student || !course) throw new Error('Missing data');
+  try {
+    if (!student || !course) throw new Error("Missing data");
 
-      const transactionId = `TXN-${Date.now()}`;
+    // 1️⃣ Create Razorpay order using backend
+    const orderRes = await fetch("/api/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: course.discounted_price }),
+    });
 
-      const { error: orderError } = await supabase
-        .from('orders')
-        .insert([
+    const orderData = await orderRes.json();
+    if (!orderData.id) throw new Error("Failed to create Razorpay order");
+
+    // 2️⃣ Open Razorpay Checkout
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: orderData.amount,
+      currency: "INR",
+      name: "JavaMaster",
+      description: course.title,
+      order_id: orderData.id,
+      prefill: {
+        name: student.full_name,
+        email: student.email,
+        contact: student.mobile_number,
+      },
+      handler: async function (response: any) {
+        // 3️⃣ Save order after successful payment
+        await supabase.from("orders").insert([
           {
             student_id: student.id,
             course_id: course.id,
             amount_paid: course.discounted_price,
-            transaction_id: transactionId,
-            payment_status: 'completed',
-          }
+            transaction_id: response.razorpay_payment_id,
+            payment_status: "completed",
+          },
         ]);
 
-      if (orderError) throw orderError;
+        navigate(`/order-confirmation/${response.razorpay_payment_id}`);
+      },
 
-      await supabase
-        .from('courses')
-        .update({ seats_reserved: course.seats_reserved + 1 })
-        .eq('id', course.id);
+      theme: { color: "#FACC15" },
+    };
 
-      navigate(`/order-confirmation/${transactionId}`);
-    } catch (err: any) {
-      setError(err.message || 'Checkout failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
+  } catch (err: any) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   if (!course) return <div className="py-12 text-center">Loading...</div>;
 
